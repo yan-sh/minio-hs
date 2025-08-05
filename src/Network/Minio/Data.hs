@@ -373,12 +373,14 @@ data PutObjectOptions = PutObjectOptions
     -- | Set number of worker threads used to upload an object.
     pooNumThreads :: Maybe Word,
     -- | Set object encryption parameters for the request.
-    pooSSE :: Maybe SSE
+    pooSSE :: Maybe SSE,
+    -- | Set a behavior to put object with name already existed in storage.
+    pooIfNoneMatch :: Maybe Text
   }
 
 -- | Provide default `PutObjectOptions`.
 defaultPutObjectOptions :: PutObjectOptions
-defaultPutObjectOptions = PutObjectOptions Nothing Nothing Nothing Nothing Nothing Nothing [] Nothing Nothing
+defaultPutObjectOptions = PutObjectOptions Nothing Nothing Nothing Nothing Nothing Nothing [] Nothing Nothing Nothing
 
 pooToHeaders :: PutObjectOptions -> [HT.Header]
 pooToHeaders poo =
@@ -395,7 +397,8 @@ pooToHeaders poo =
         "content-disposition",
         "content-language",
         "cache-control",
-        "x-amz-storage-class"
+        "x-amz-storage-class",
+        "if-none-match"
       ]
     values =
       map
@@ -405,7 +408,8 @@ pooToHeaders poo =
           pooContentDisposition,
           pooContentLanguage,
           pooCacheControl,
-          pooStorageClass
+          pooStorageClass,
+          pooIfNoneMatch
         ]
 
 -- |
