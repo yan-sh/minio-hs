@@ -140,6 +140,7 @@ module Network.Minio
 
     -- ** Conduit-based streaming operations
     putObject,
+    putObjectStream,
     PutObjectOptions,
     defaultPutObjectOptions,
     pooContentType,
@@ -151,6 +152,7 @@ module Network.Minio
     pooUserMetadata,
     pooNumThreads,
     pooSSE,
+    pooIfNoneMatch,
     getObject,
     GetObjectOptions,
     defaultGetObjectOptions,
@@ -283,6 +285,21 @@ putObject ::
   Minio ()
 putObject bucket object src sizeMay opts =
   void $ putObjectInternal bucket object opts $ ODStream src sizeMay
+
+-- | Put an object from a conduit source. The size need be provided.
+-- This version of putting object is optimized to stream data without
+-- need to be full resident in memory and then this is suitable
+-- to put small objects cause it is never does multipart upload 
+putObjectStream ::
+  Bucket ->
+  Object ->
+  C.ConduitM () ByteString Minio () ->
+  Int64 ->
+  MinioConn ->
+  PutObjectOptions ->
+  Minio ()
+putObjectStream bucket object src size minioConn opts =
+  void $ putObjectInternalStream bucket object opts src size minioConn
 
 -- | Perform a server-side copy operation to create an object based on
 -- the destination specification in DestinationInfo from the source
