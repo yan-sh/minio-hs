@@ -16,6 +16,7 @@
 
 module Network.Minio.PutObject
   ( putObjectInternal,
+    putObjectInternalStream,
     ObjectData (..),
     selectPartSizes,
   )
@@ -102,6 +103,18 @@ putObjectInternal b o opts (ODFile fp sizeMay) = do
           | otherwise ->
               sequentialMultipartUpload b o opts (Just size) $
                 CB.sourceFile fp
+
+-- | Put an object from ObjectData, optimized to put streamly
+putObjectInternalStream ::
+  Bucket ->
+  Object ->
+  PutObjectOptions ->
+  C.ConduitM () ByteString Minio () ->
+  Int64 ->
+  MinioConn -> 
+  Minio ETag
+putObjectInternalStream b o opts src size minioConn = do
+  putObjectSingleStream b o (pooToHeaders opts) src size minioConn
 
 parallelMultipartUpload ::
   Bucket ->

@@ -56,6 +56,7 @@ module Network.Minio.S3API
     maxSinglePutObjectSizeBytes,
     putObjectSingle',
     putObjectSingle,
+    putObjectSingleStream,
     copyObjectSingle,
 
     -- * Multipart Upload APIs
@@ -108,6 +109,7 @@ module Network.Minio.S3API
 where
 
 import qualified Data.ByteString as BS
+import qualified Conduit as C
 import qualified Data.Text as T
 import Lib.Prelude
 import qualified Network.HTTP.Conduit as NC
@@ -228,6 +230,43 @@ putObjectSingle' bucket object headers bs = do
     (throwIO MErrVETagHeaderNotFound)
     return
     etag
+
+
+-- | PUT an object into the service. This function performs a single
+-- PUT object call and uses a conduit of ByteString as the object
+-- data.
+putObjectSingleStream :: 
+  Bucket ->
+  Object ->
+  [HT.Header] ->
+  C.ConduitM () ByteString Minio () ->
+  Int64 ->
+  MinioConn -> 
+  Minio ETag
+putObjectSingleStream bucket object headers src size minioConn = do
+  when (size > maxSinglePutObjectSizeBytes) $
+    throwIO $
+      MErrVSinglePUTSizeExceeded size
+
+  let payload = PayloadC size $ C.transPipe (flip runReaderT minioConn . coerce) src
+  resp <-
+    mkStreamRequest $
+      defaultS3ReqInfo
+        { riMethod = HT.methodPut,
+          riBucket = Just bucket,
+          riObject = Just object,
+          riHeaders = headers,
+          riPayload = payload
+        }
+
+  let rheaders = NC.responseHeaders resp
+      etag = getETagHeader rheaders
+  maybe
+    (throwIO MErrVETagHeaderNotFound)
+    return
+    etag
+
+
 
 -- | PUT an object into the service. This function performs a single
 -- PUT object call, and so can only transfer objects upto 5GiB.
