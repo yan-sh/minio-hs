@@ -151,6 +151,7 @@ module Network.Minio
     pooUserMetadata,
     pooNumThreads,
     pooSSE,
+    pooIfNoneMatch,
     getObject,
     GetObjectOptions,
     defaultGetObjectOptions,
