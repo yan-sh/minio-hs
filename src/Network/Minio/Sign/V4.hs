@@ -238,7 +238,8 @@ getCanonicalRequestAndSignedHeaders ::
 getCanonicalRequestAndSignedHeaders isStreaming sp req requestHeaders =
   let httpMethod = NC.method req
 
-      canonicalUri = uriEncode False $ NC.path req
+      -- canonicalUri = uriEncode False $ NC.path req
+      canonicalUri = NC.path req
 
       canonicalQueryString =
         B.intercalate "&" $
@@ -246,6 +247,7 @@ getCanonicalRequestAndSignedHeaders isStreaming sp req requestHeaders =
             sort $
               map
                 ( bimap (uriEncode True) (maybe "" (uriEncode True))
+                -- ( bimap id (maybe "" id)
                 )
                 (parseQuery $ NC.queryString req)
 
@@ -275,13 +277,15 @@ mkCanonicalRequest ::
   ByteString
 mkCanonicalRequest !isStreaming !sp !req !headersForSign =
   let httpMethod = NC.method req
-      canonicalUri = uriEncode False $ NC.path req
+      -- canonicalUri = uriEncode False $ NC.path req
+      canonicalUri = NC.path req
       canonicalQueryString =
         B.intercalate "&" $
           map (\(x, y) -> B.concat [x, "=", y]) $
             sortBy (\a b -> compare (fst a) (fst b)) $
               map
                 ( bimap (uriEncode True) (maybe "" (uriEncode True))
+                -- ( bimap id (maybe "" id)
                 )
                 (parseQuery $ NC.queryString req)
       sortedHeaders = sort headersForSign

@@ -56,6 +56,7 @@ import Network.Minio.Errors
 import Network.Minio.Sign.V4
 import Network.Minio.Utils
 import Network.Minio.XmlParser
+import Network.Minio.Data.ByteString (UriEncodable (..))
 
 -- | Fetch bucket location (region)
 getLocation :: Bucket -> Minio Region
@@ -162,7 +163,10 @@ requestSTSCredential p = do
   liftIO $ retrieveSTSCredentials p ("", 0, False) mgr
 
 buildRequest :: S3ReqInfo -> Minio NC.Request
-buildRequest ri = do
+buildRequest ri_ = do
+
+  let ri = ri_ { riObject = decodeUtf8 . uriEncode False <$> riObject ri_ }
+
   maybe (return ()) checkBucketNameValidity $ riBucket ri
   maybe (return ()) checkObjectNameValidity $ riObject ri
 
